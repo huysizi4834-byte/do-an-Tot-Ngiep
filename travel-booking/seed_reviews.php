@@ -1,4 +1,5 @@
 <?php
+// Script này được dùng để tạo dữ liệu mẫu cho tính năng đánh giá Tour
 require 'includes/db.php';
 
 // Các mẫu bình luận
