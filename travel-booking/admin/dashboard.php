@@ -28,7 +28,16 @@ $total_users = mysqli_fetch_assoc($user_query)['total'] ?? 0;
 $view = $_GET['view'] ?? 'month';
 $history = [];
 
-if ($view === 'week') {
+if ($view === 'day') {
+    // 14 ngày gần nhất
+    for ($i = 0; $i < 14; $i++) {
+        $day = date('Y-m-d', strtotime("-$i days"));
+        $history[$day] = 0;
+    }
+    $date_expr = "DATE(b.created_at)";
+    $date_expr_no_b = "DATE(created_at)";
+    $interval = "14 DAY";
+} elseif ($view === 'week') {
     // 12 tuần gần nhất
     for ($i = 0; $i < 12; $i++) {
         $monday = date('Y-m-d', strtotime("monday this week -$i week"));
@@ -204,8 +213,9 @@ $recent_bookings_result = mysqli_query($conn, $recent_bookings_sql);
             <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
                 <span><i class="fa-solid fa-chart-bar me-2"></i> Báo cáo Doanh thu</span>
                 <div>
-                    <a href="?view=month" class="btn btn-sm <?= $view === 'month' ? 'btn-primary' : 'btn-outline-primary' ?>">Theo Tháng</a>
+                    <a href="?view=day" class="btn btn-sm <?= $view === 'day' ? 'btn-primary' : 'btn-outline-primary' ?>">Theo Ngày</a>
                     <a href="?view=week" class="btn btn-sm <?= $view === 'week' ? 'btn-primary' : 'btn-outline-primary' ?> ms-1">Theo Tuần</a>
+                    <a href="?view=month" class="btn btn-sm <?= $view === 'month' ? 'btn-primary' : 'btn-outline-primary' ?> ms-1">Theo Tháng</a>
                     <button id="exportPdfBtn" onclick="exportPDF()" class="btn btn-sm btn-danger ms-2"><i class="fa-solid fa-file-pdf me-1"></i> Xuất PDF</button>
                 </div>
             </div>
@@ -221,7 +231,7 @@ $recent_bookings_result = mysqli_query($conn, $recent_bookings_sql);
                         <ul id="data-list-ul" class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
                             <?php foreach($history as $m => $val): ?>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <?= $view === 'week' ? 'Tuần ' . date('d/m/Y', strtotime($m)) : 'Tháng ' . date('m/Y', strtotime($m . '-01')) ?>
+                                <?= $view === 'day' ? 'Ngày ' . date('d/m/Y', strtotime($m)) : ($view === 'week' ? 'Tuần ' . date('d/m/Y', strtotime($m)) : 'Tháng ' . date('m/Y', strtotime($m . '-01'))) ?>
                                 <span class="fw-bold text-danger"><?= number_format($val) ?> ₫</span>
                             </li>
                             <?php endforeach; ?>
@@ -242,7 +252,10 @@ $recent_bookings_result = mysqli_query($conn, $recent_bookings_sql);
     
     // Định dạng lại nhãn cho đẹp
     const formattedLabels = labels.map(label => {
-        if (viewType === 'week') {
+        if (viewType === 'day') {
+            const parts = label.split('-');
+            return parts[2] + '/' + parts[1]; // Ngày/Tháng
+        } else if (viewType === 'week') {
             const parts = label.split('-');
             return parts[2] + '/' + parts[1]; // Ngày/Tháng
         } else {
@@ -270,7 +283,7 @@ $recent_bookings_result = mysqli_query($conn, $recent_bookings_sql);
                 legend: { position: 'top' },
                 title: {
                     display: true,
-                    text: viewType === 'week' ? 'Biểu đồ Doanh thu (12 tuần gần nhất)' : 'Biểu đồ Doanh thu (6 tháng gần nhất)'
+                    text: viewType === 'day' ? 'Biểu đồ Doanh thu (14 ngày gần nhất)' : (viewType === 'week' ? 'Biểu đồ Doanh thu (12 tuần gần nhất)' : 'Biểu đồ Doanh thu (6 tháng gần nhất)')
                 }
             },
             scales: {

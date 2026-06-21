@@ -123,14 +123,17 @@ include 'includes/header.php';
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Mã giảm giá (nếu có)</label>
-                            <div class="input-group">
-                                <input type="text" name="discount_code" id="discount_code" class="form-control" placeholder="Nhập mã giảm giá (VD: GIAM10, GIAM20)">
-                                <button type="button" class="btn btn-outline-secondary fw-bold" onclick="applyDiscount()">Áp dụng</button>
+                        <div class="mb-4 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold">Mã giảm giá (Tùy chọn)</label>
+                            <div class="input-group mb-2">
+                                <input type="text" id="voucher_code" class="form-control" placeholder="Nhập mã giảm giá...">
+                                <button type="button" id="btn-apply-voucher" class="btn btn-outline-danger">Áp dụng</button>
                             </div>
-                            <div id="discount_message" class="mt-2 d-none"></div>
+                            <div id="voucher-msg" class="small"></div>
                         </div>
+
+                        <input type="hidden" name="promotion_id" id="promotion_id" value="">
+                        <input type="hidden" name="discount_amount" id="discount_amount" value="0">
 
                         <hr class="my-4">
                         <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5 text-uppercase">Xác nhận
@@ -198,53 +201,75 @@ include 'includes/header.php';
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         updateTotal();
-    });
+        // Xử lý áp dụng mã giảm giá
+        const btnApply = document.getElementById('btn-apply-voucher');
+        const inputCode = document.getElementById('voucher_code');
+        const msgDiv = document.getElementById('voucher-msg');
+        
+        if (btnApply) {
+            btnApply.addEventListener('click', function() {
+                const code = inputCode.value.trim();
+                if (!code) {
+                    msgDiv.innerHTML = '<span class="text-danger">Vui lòng nhập mã.</span>';
+                    return;
+                }
 
-    let currentDiscount = 0;
+                let passengers = parseInt(document.getElementById('total_passengers').value);
+                let pricePerTicket = parseInt(document.getElementById('price_per_ticket').value);
+                let currentTotal = passengers * pricePerTicket;
+
+                btnApply.disabled = true;
+                btnApply.innerText = 'Đang kt...';
+
+                const formData = new URLSearchParams();
+                formData.append('code', code);
+                formData.append('total_amount', currentTotal);
+
+                fetch('api_check_voucher.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                })
+                .then(res => res.json())
+                .then(data => {
+                    btnApply.disabled = false;
+                    btnApply.innerText = 'Áp dụng';
+
+                    if (data.success) {
+                        msgDiv.innerHTML = '<span class="text-success">' + data.message + '</span>';
+                        document.getElementById('promotion_id').value = data.promotion_id;
+                        document.getElementById('discount_amount').value = data.discount_amount;
+                        updateTotal();
+                    } else {
+                        msgDiv.innerHTML = '<span class="text-danger">' + data.message + '</span>';
+                        document.getElementById('promotion_id').value = '';
+                        document.getElementById('discount_amount').value = 0;
+                        updateTotal();
+                    }
+                })
+                .catch(err => {
+                    btnApply.disabled = false;
+                    btnApply.innerText = 'Áp dụng';
+                    msgDiv.innerHTML = '<span class="text-danger">Lỗi kết nối.</span>';
+                });
+            });
+        }
+    });
 
     function copyAndApply(elementId) {
         let textToCopy = document.getElementById(elementId).innerText.trim();
-        let discountInput = document.getElementById('discount_code');
+        let discountInput = document.getElementById('voucher_code');
         
-        // Gán trực tiếp vào ô input
         discountInput.value = textToCopy;
-        
-        // Highlight để người dùng thấy
         discountInput.style.transition = "box-shadow 0.3s ease-in-out";
         discountInput.style.boxShadow = "0 0 0 0.25rem rgba(13, 110, 253, 0.25)";
         setTimeout(() => discountInput.style.boxShadow = "none", 1500);
 
-        // Tự động gọi hàm áp dụng
-        applyDiscount();
+        document.getElementById('btn-apply-voucher').click();
         
-        // Thử copy vào clipboard (nếu trình duyệt hỗ trợ)
         if (navigator.clipboard) {
             navigator.clipboard.writeText(textToCopy).catch(err => console.error("Clipboard err: ", err));
         }
-    }
-
-    function applyDiscount() {
-        let code = document.getElementById('discount_code').value.trim().toUpperCase();
-        let msg = document.getElementById('discount_message');
-        
-        if (code === 'GIAM10') {
-            currentDiscount = 0.10;
-            msg.innerHTML = '<i class="fas fa-check-circle"></i> Đã áp dụng mã giảm 10%';
-            msg.className = 'mt-2 text-success small fw-bold';
-        } else if (code === 'GIAM20') {
-            currentDiscount = 0.20;
-            msg.innerHTML = '<i class="fas fa-check-circle"></i> Đã áp dụng mã giảm 20%';
-            msg.className = 'mt-2 text-success small fw-bold';
-        } else if (code === '') {
-            currentDiscount = 0;
-            msg.innerHTML = '';
-            msg.className = 'mt-2 d-none';
-        } else {
-            currentDiscount = 0;
-            msg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Mã giảm giá không hợp lệ hoặc đã hết hạn';
-            msg.className = 'mt-2 text-danger small fw-bold';
-        }
-        updateTotal();
     }
 
     function formatMoney(amount, currencyFormat) {
@@ -274,19 +299,20 @@ include 'includes/header.php';
             ($_SESSION['currency'] == 'JPY' ? 170 : 1))) : 1 ?>;
             
         let rawTotalVND = passengers * pricePerTicket;
-        let discountVND = rawTotalVND * currentDiscount;
-        rawTotalVND = rawTotalVND - discountVND;
+        let discountAmount = parseFloat(document.getElementById('discount_amount').value) || 0;
+        let finalTotalVND = rawTotalVND - discountAmount;
+        if (finalTotalVND < 0) finalTotalVND = 0;
 
         // Show/hide discount row
-        if (currentDiscount > 0) {
+        if (discountAmount > 0) {
             document.getElementById('discount_row').classList.remove('d-none');
-            let convertedDiscount = discountVND / exchangeRate;
+            let convertedDiscount = discountAmount / exchangeRate;
             document.getElementById('summary_discount').textContent = '-' + formatMoney(convertedDiscount, currencyFormat);
         } else {
             document.getElementById('discount_row').classList.add('d-none');
         }
 
-        let convertedTotal = rawTotalVND / exchangeRate;
+        let convertedTotal = finalTotalVND / exchangeRate;
         document.getElementById('summary_total').textContent = formatMoney(convertedTotal, currencyFormat);
         
         // Update passenger input fields

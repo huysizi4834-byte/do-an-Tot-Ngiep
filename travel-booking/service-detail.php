@@ -31,7 +31,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['book_service'])) {
         $quantity = (int)$_POST['quantity'];
         
         if ($quantity > 0 && !empty($service_date)) {
-            $total_price = $service['price'] * $quantity;
+            $discount_amount = isset($_POST['discount_amount']) ? (float)$_POST['discount_amount'] : 0;
+            $promotion_id = isset($_POST['promotion_id']) ? (int)$_POST['promotion_id'] : 0;
+
+            $raw_price = $service['price'] * $quantity;
+            $total_price = $raw_price - $discount_amount;
+            if ($total_price < 0) $total_price = 0;
             $payment_type = $_POST['payment_type'] ?? 'full';
             $amount_paid = ($payment_type === 'deposit') ? ($total_price / 2) : $total_price;
             $booking_code = 'SV' . strtoupper(substr(uniqid(), -6));
@@ -40,6 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['book_service'])) {
                            VALUES ($user_id, $id, '$booking_code', '$service_date', $quantity, $total_price, '$payment_type', $amount_paid, 'pending', 'pending')";
                            
             if (mysqli_query($conn, $insert_sql)) {
+                if ($promotion_id > 0) {
+                    mysqli_query($conn, "UPDATE user_promotions SET status = 'used', used_at = NOW() WHERE user_id = $user_id AND promotion_id = $promotion_id");
+                    mysqli_query($conn, "UPDATE promotions SET used_count = used_count + 1 WHERE id = $promotion_id");
+                }
                 header("Location: payment-gateway.php?code=" . $booking_code);
                 exit;
             } else {
@@ -125,6 +134,22 @@ include 'includes/header.php';
                             <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" required>
                         </div>
 
+                        <div class="mb-4 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold">Mã giảm giá (Tùy chọn)</label>
+                            <div class="input-group mb-2">
+                                <input type="text" id="voucher_code" class="form-control" placeholder="Nhập mã giảm giá...">
+                                <button type="button" id="btn-apply-voucher" class="btn btn-outline-danger">Áp dụng</button>
+                            </div>
+                            <div id="voucher-msg" class="small"></div>
+                        </div>
+
+                        <input type="hidden" name="promotion_id" id="promotion_id" value="">
+                        <input type="hidden" name="discount_amount" id="discount_amount" value="0">
+                        <div class="d-flex justify-content-between mb-2 text-success" id="discount-row" style="display: none !important;">
+                            <span class="fw-bold">Giảm giá:</span>
+                            <span class="fw-bold" id="discount-display">0</span>
+                        </div>
+
                         <div class="d-flex justify-content-between align-items-end mb-4 p-3 bg-light rounded">
                             <span class="fw-bold">Tổng tiền:</span>
                             <span class="fs-4 fw-bold text-danger" id="total-price">
@@ -172,12 +197,34 @@ document.addEventListener('DOMContentLoaded', function() {
         ($_SESSION['currency'] == 'EUR' ? 27000 : 
         ($_SESSION['currency'] == 'JPY' ? 170 : 1))) : 1 ?>;
 
-    quantityInput.addEventListener('input', function() {
-        let quantity = parseInt(this.value, 10);
+    function updateTotal() {
+        let quantity = parseInt(quantityInput.value, 10);
         if (isNaN(quantity) || quantity < 1) quantity = 1;
         
         let rawTotalVND = quantity * unitPrice;
-        let convertedTotal = rawTotalVND / exchangeRate;
+        let discountAmount = parseFloat(document.getElementById('discount_amount').value) || 0;
+        let finalTotalVND = rawTotalVND - discountAmount;
+        if (finalTotalVND < 0) finalTotalVND = 0;
+
+        if (discountAmount > 0) {
+            document.getElementById('discount-row').style.setProperty('display', 'flex', 'important');
+            let convertedDiscount = discountAmount / exchangeRate;
+            let formattedDiscount = '';
+            if(currencyFormat === 'VND') {
+                formattedDiscount = '-' + new Intl.NumberFormat('vi-VN').format(convertedDiscount) + ' ₫';
+            } else if(currencyFormat === 'USD') {
+                formattedDiscount = '-$' + new Intl.NumberFormat('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(convertedDiscount);
+            } else if(currencyFormat === 'EUR') {
+                formattedDiscount = '-€' + new Intl.NumberFormat('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(convertedDiscount);
+            } else if(currencyFormat === 'JPY') {
+                formattedDiscount = '-¥' + new Intl.NumberFormat('ja-JP').format(convertedDiscount);
+            }
+            document.getElementById('discount-display').textContent = formattedDiscount;
+        } else {
+            document.getElementById('discount-row').style.setProperty('display', 'none', 'important');
+        }
+
+        let convertedTotal = finalTotalVND / exchangeRate;
         
         let formattedTotal = '';
         if(currencyFormat === 'VND') {
@@ -191,7 +238,63 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         totalPriceEl.textContent = formattedTotal;
-    });
+    }
+
+    quantityInput.addEventListener('input', updateTotal);
+
+    // Xử lý áp dụng mã giảm giá
+    const btnApply = document.getElementById('btn-apply-voucher');
+    const inputCode = document.getElementById('voucher_code');
+    const msgDiv = document.getElementById('voucher-msg');
+    
+    if (btnApply) {
+        btnApply.addEventListener('click', function() {
+            const code = inputCode.value.trim();
+            if (!code) {
+                msgDiv.innerHTML = '<span class="text-danger">Vui lòng nhập mã.</span>';
+                return;
+            }
+
+            let quantity = parseInt(quantityInput.value, 10);
+            if (isNaN(quantity) || quantity < 1) quantity = 1;
+            let currentTotal = quantity * unitPrice;
+
+            btnApply.disabled = true;
+            btnApply.innerText = 'Đang kt...';
+
+            const formData = new URLSearchParams();
+            formData.append('code', code);
+            formData.append('total_amount', currentTotal);
+
+            fetch('api_check_voucher.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            })
+            .then(res => res.json())
+            .then(data => {
+                btnApply.disabled = false;
+                btnApply.innerText = 'Áp dụng';
+
+                if (data.success) {
+                    msgDiv.innerHTML = '<span class="text-success">' + data.message + '</span>';
+                    document.getElementById('promotion_id').value = data.promotion_id;
+                    document.getElementById('discount_amount').value = data.discount_amount;
+                    updateTotal();
+                } else {
+                    msgDiv.innerHTML = '<span class="text-danger">' + data.message + '</span>';
+                    document.getElementById('promotion_id').value = '';
+                    document.getElementById('discount_amount').value = 0;
+                    updateTotal();
+                }
+            })
+            .catch(err => {
+                btnApply.disabled = false;
+                btnApply.innerText = 'Áp dụng';
+                msgDiv.innerHTML = '<span class="text-danger">Lỗi kết nối.</span>';
+            });
+        });
+    }
 });
 </script>
 

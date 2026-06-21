@@ -36,11 +36,26 @@ include 'includes/header.php';
                             <input type="number" name="total_people" class="form-control" min="1" value="1" required>
                         </div>
 
+                        <div class="mb-4 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold">Mã giảm giá (Tùy chọn)</label>
+                            <div class="input-group mb-2">
+                                <input type="text" id="voucher_code" class="form-control" placeholder="Nhập mã giảm giá...">
+                                <button type="button" id="btn-apply-voucher" class="btn btn-outline-danger">Áp dụng</button>
+                            </div>
+                            <div id="voucher-msg" class="small"></div>
+                        </div>
+
+                        <input type="hidden" name="promotion_id" id="promotion_id" value="">
+                        <input type="hidden" name="discount_amount" id="discount_amount" value="0">
+
                         <div class="d-flex justify-content-between align-items-end mb-4 p-3 bg-light rounded border-top pt-3">
                             <span class="fw-bold">Tổng tiền:</span>
-                            <span class="fs-4 fw-bold text-danger" id="total-price" data-unit-price="<?= $tour['price'] ?>">
-                                <?= formatPrice($tour['price']) ?>
-                            </span>
+                            <div class="text-end">
+                                <div id="discount-display" class="text-success small mb-1" style="display: none;"></div>
+                                <span class="fs-4 fw-bold text-danger" id="total-price" data-unit-price="<?= $tour['price'] ?>" data-raw-total="0">
+                                    <?= formatPrice($tour['price']) ?>
+                                </span>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -85,7 +100,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isNaN(people) || people < 1) people = 1;
         
         let rawTotalVND = people * unitPrice;
-        let convertedTotal = rawTotalVND / exchangeRate;
+        totalPriceEl.setAttribute('data-raw-total', rawTotalVND);
+
+        // Calculate final total after discount (discount is stored as VND)
+        let currentDiscount = parseFloat(document.getElementById('discount_amount').value) || 0;
+        let finalVND = rawTotalVND - currentDiscount;
+        if (finalVND < 0) finalVND = 0;
+
+        let convertedTotal = finalVND / exchangeRate;
         
         let formattedTotal = '';
         if(currencyFormat === 'VND') {
@@ -103,6 +125,63 @@ document.addEventListener('DOMContentLoaded', function() {
 
     peopleInput.addEventListener('input', updateTotal);
     updateTotal();
+
+    // Xử lý áp dụng mã giảm giá
+    const btnApply = document.getElementById('btn-apply-voucher');
+    const inputCode = document.getElementById('voucher_code');
+    const msgDiv = document.getElementById('voucher-msg');
+    
+    btnApply.addEventListener('click', function() {
+        const code = inputCode.value.trim();
+        if (!code) {
+            msgDiv.innerHTML = '<span class="text-danger">Vui lòng nhập mã.</span>';
+            return;
+        }
+
+        const currentTotal = parseFloat(totalPriceEl.getAttribute('data-raw-total')) || 0;
+
+        btnApply.disabled = true;
+        btnApply.innerText = 'Đang kt...';
+
+        const formData = new URLSearchParams();
+        formData.append('code', code);
+        formData.append('total_amount', currentTotal);
+
+        fetch('api_check_voucher.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+        })
+        .then(res => res.json())
+        .then(data => {
+            btnApply.disabled = false;
+            btnApply.innerText = 'Áp dụng';
+
+            if (data.success) {
+                msgDiv.innerHTML = '<span class="text-success">' + data.message + '</span>';
+                document.getElementById('promotion_id').value = data.promotion_id;
+                document.getElementById('discount_amount').value = data.discount_amount;
+                
+                const formattedDiscount = new Intl.NumberFormat('vi-VN').format(data.discount_amount) + ' ₫';
+                const discDisplay = document.getElementById('discount-display');
+                discDisplay.innerText = '- Giảm: ' + formattedDiscount;
+                discDisplay.style.display = 'block';
+
+                updateTotal();
+            } else {
+                msgDiv.innerHTML = '<span class="text-danger">' + data.message + '</span>';
+                document.getElementById('promotion_id').value = '';
+                document.getElementById('discount_amount').value = 0;
+                document.getElementById('discount-display').style.display = 'none';
+                updateTotal();
+            }
+        })
+        .catch(err => {
+            btnApply.disabled = false;
+            btnApply.innerText = 'Áp dụng';
+            msgDiv.innerHTML = '<span class="text-danger">Lỗi kết nối.</span>';
+        });
+    });
 });
 </script>
 

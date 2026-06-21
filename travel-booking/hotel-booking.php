@@ -122,6 +122,19 @@ include 'includes/header.php';
                             </div>
                         </div>
 
+                        <!-- Voucher Section -->
+                        <div class="mb-4 p-3 bg-light rounded border mt-4">
+                            <label class="form-label fw-bold">Mã giảm giá (Tùy chọn)</label>
+                            <div class="input-group mb-2">
+                                <input type="text" id="voucher_code" class="form-control" placeholder="Nhập mã giảm giá...">
+                                <button type="button" id="btn-apply-voucher" class="btn btn-outline-danger">Áp dụng</button>
+                            </div>
+                            <div id="voucher-msg" class="small"></div>
+                        </div>
+
+                        <input type="hidden" name="promotion_id" id="promotion_id" value="">
+                        <input type="hidden" name="discount_amount" id="discount_amount" value="0">
+
                         <hr class="my-4">
                         
                         <!-- Nút Tiếp tục ban đầu -->
@@ -179,6 +192,7 @@ include 'includes/header.php';
                         <span>Số đêm lưu trú:</span>
                         <span class="text-dark fw-bold" id="summary_nights">0 đêm</span>
                     </div>
+                    <div id="discount-display" class="text-success small mb-2 text-end" style="display: none;"></div>
 
                     <hr>
 
@@ -230,7 +244,11 @@ include 'includes/header.php';
                     ($_SESSION['currency'] == 'JPY' ? 170 : 1))) : 1 ?>;
 
                 let rawTotalVND = pricePerNight * totalNights;
-                let convertedTotal = rawTotalVND / exchangeRate;
+                let currentDiscount = parseFloat(document.getElementById('discount_amount').value) || 0;
+                let finalTotalVND = rawTotalVND - currentDiscount;
+                if (finalTotalVND < 0) finalTotalVND = 0;
+
+                let convertedTotal = finalTotalVND / exchangeRate;
                 
                 let formattedTotal = '';
                 if(currencyFormat === 'VND') {
@@ -246,7 +264,7 @@ include 'includes/header.php';
                 document.getElementById('summary_total').innerText = formattedTotal;
                 
                 // Cập nhật số tiền thanh toán
-                let total = rawTotalVND;
+                let total = finalTotalVND;
                 document.getElementById('label_pay_full').innerText = total.toLocaleString('vi-VN') + ' ₫';
                 document.getElementById('label_pay_deposit').innerText = (total / 2).toLocaleString('vi-VN') + ' ₫';
 
@@ -463,6 +481,87 @@ include 'includes/header.php';
     document.addEventListener("DOMContentLoaded", function() {
         toggleVerification();
         loadFaceModels();
+
+        // Xử lý áp dụng mã giảm giá
+        const btnApply = document.getElementById('btn-apply-voucher');
+        const inputCode = document.getElementById('voucher_code');
+        const msgDiv = document.getElementById('voucher-msg');
+        
+        if (btnApply) {
+            btnApply.addEventListener('click', function() {
+                const code = inputCode.value.trim();
+                if (!code) {
+                    msgDiv.innerHTML = '<span class="text-danger">Vui lòng nhập mã.</span>';
+                    return;
+                }
+
+                // Tính tổng tiền gốc
+                let checkIn = document.getElementById('check_in_date').value;
+                let checkOut = document.getElementById('check_out_date').value;
+                let pricePerNight = parseInt(document.getElementById('price_per_night').value);
+                let currentTotal = 0;
+                if (checkIn && checkOut) {
+                    let date1 = new Date(checkIn);
+                    let date2 = new Date(checkOut);
+                    let diffTime = date2 - date1;
+                    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays > 0) {
+                        currentTotal = diffDays * pricePerNight;
+                    }
+                }
+
+                if (currentTotal <= 0) {
+                    msgDiv.innerHTML = '<span class="text-danger">Vui lòng chọn ngày lưu trú hợp lệ.</span>';
+                    return;
+                }
+
+                btnApply.disabled = true;
+                btnApply.innerText = 'Đang kt...';
+
+                const formData = new URLSearchParams();
+                formData.append('code', code);
+                formData.append('total_amount', currentTotal);
+
+                fetch('api_check_voucher.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                })
+                .then(res => res.json())
+                .then(data => {
+                    btnApply.disabled = false;
+                    btnApply.innerText = 'Áp dụng';
+
+                    if (data.success) {
+                        msgDiv.innerHTML = '<span class="text-success">' + data.message + '</span>';
+                        document.getElementById('promotion_id').value = data.promotion_id;
+                        document.getElementById('discount_amount').value = data.discount_amount;
+                        
+                        const formattedDiscount = new Intl.NumberFormat('vi-VN').format(data.discount_amount) + ' ₫';
+                        const discDisplay = document.getElementById('discount-display');
+                        if (discDisplay) {
+                            discDisplay.innerText = '- Giảm: ' + formattedDiscount;
+                            discDisplay.style.display = 'block';
+                        }
+                        calculateTotal();
+                    } else {
+                        msgDiv.innerHTML = '<span class="text-danger">' + data.message + '</span>';
+                        document.getElementById('promotion_id').value = '';
+                        document.getElementById('discount_amount').value = 0;
+                        const discDisplay = document.getElementById('discount-display');
+                        if (discDisplay) {
+                            discDisplay.style.display = 'none';
+                        }
+                        calculateTotal();
+                    }
+                })
+                .catch(err => {
+                    btnApply.disabled = false;
+                    btnApply.innerText = 'Áp dụng';
+                    msgDiv.innerHTML = '<span class="text-danger">Lỗi kết nối.</span>';
+                });
+            });
+        }
     });
 </script>
 

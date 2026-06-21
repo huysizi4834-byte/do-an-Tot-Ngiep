@@ -588,18 +588,51 @@ section h2.text-center::after {
 
 /* RESPONSIVE */
 @media (max-width: 991px) {
+    body {
+        overflow-x: hidden;
+    }
+    .header-container {
+        padding: 0 15px;
+    }
+    .header-right {
+        gap: 10px;
+    }
+    .currency, .location {
+        display: none !important;
+    }
+    .logo-title {
+        font-size: 24px;
+    }
     .header-menu {
         display: none;
     }
     .hero-center h1 {
         font-size: 40px;
     }
-    .search-wrapper {
+    .search-wrapper, .search-wrapper-new {
         margin-top: -30px;
         padding: 20px;
     }
-    .search-btn {
+    .search-btn, .search-submit-btn {
         margin-top: 15px;
+        width: 100%;
+        margin-left: 0;
+    }
+    .search-form-flex {
+        flex-direction: column;
+        border-radius: 20px;
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+    }
+    .search-input-group {
+        width: 100%;
+        background: #f8f9fa;
+        margin-bottom: 10px;
+        border-radius: 12px;
+    }
+    .search-divider {
+        display: none;
     }
 }
 /* LOGIN PAGE */

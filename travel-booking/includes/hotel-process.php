@@ -29,7 +29,13 @@ if ($total_nights <= 0) {
     die("Ngày trả phòng phải sau ngày nhận phòng.");
 }
 
-$total_amount = $total_nights * $price_per_night;
+$discount_amount = isset($_POST['discount_amount']) ? (float)$_POST['discount_amount'] : 0;
+$promotion_id = isset($_POST['promotion_id']) ? (int)$_POST['promotion_id'] : 0;
+
+$raw_amount = $total_nights * $price_per_night;
+$total_amount = $raw_amount - $discount_amount;
+if ($total_amount < 0) $total_amount = 0;
+
 $booking_code = 'HT' . strtoupper(substr(uniqid(), -6));
 
 // Xử lý upload ảnh
@@ -83,6 +89,11 @@ $stmt = mysqli_prepare($conn, "
 
 mysqli_stmt_bind_param($stmt, "iisssiidssssssd", $user_id, $hotel_id, $booking_code, $check_in_date, $check_out_date, $total_guests, $total_nights, $total_amount, $guest_name, $guest_phone, $special_requests, $cccd_path, $face_path, $payment_type, $amount_paid);
 mysqli_stmt_execute($stmt);
+
+if ($promotion_id > 0) {
+    mysqli_query($conn, "UPDATE user_promotions SET status = 'used', used_at = NOW() WHERE user_id = $user_id AND promotion_id = $promotion_id");
+    mysqli_query($conn, "UPDATE promotions SET used_count = used_count + 1 WHERE id = $promotion_id");
+}
 
 header("Location: ../payment-gateway.php?code=" . $booking_code);
 exit;

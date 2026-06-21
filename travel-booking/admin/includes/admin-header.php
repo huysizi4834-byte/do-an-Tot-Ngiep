@@ -78,6 +78,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         href="combo-bookings.php"><i class="bi bi-calendar2-check me-2"></i> Đặt Combos</a>
                     <a class="nav-link <?= (in_array($current_page, ['services.php', 'add-service.php', 'edit-service.php'])) ? 'active' : '' ?>"
                         href="services.php"><i class="bi bi-box-seam me-2"></i> Quản lý Dịch vụ</a>
+                    <a class="nav-link <?= (in_array($current_page, ['promotions.php', 'add-promotion.php', 'edit-promotion.php'])) ? 'active' : '' ?>"
+                        href="promotions.php"><i class="bi bi-tag me-2"></i> Quản lý Khuyến mại</a>
                     <a class="nav-link <?= (in_array($current_page, ['contacts.php', 'view-contact.php'])) ? 'active' : '' ?>"
                         href="contacts.php"><i class="bi bi-envelope me-2"></i> Quản lý Liên hệ</a>
                     <a class="nav-link <?= (in_array($current_page, ['guides.php', 'add-guide.php', 'edit-guide.php', 'guide-images.php'])) ? 'active' : '' ?>"

@@ -95,6 +95,10 @@ $currencies = [
                     Dịch vụ cộng thêm
                 </a>
 
+                <a href="voucher-center.php" class="text-danger fw-bold <?= (basename($_SERVER['PHP_SELF']) == 'voucher-center.php') ? 'active' : '' ?>">
+                    <i class="fa-solid fa-gift me-1"></i> Săn Voucher
+                </a>
+
             </nav>
 
             <!-- RIGHT -->
@@ -159,6 +163,9 @@ $currencies = [
                             <li><a class="dropdown-item" href="my-bespoke.php"><i
                                         class="fa-solid fa-star me-2"></i> Tour thiết kế riêng</a></li>
 
+                            <li><a class="dropdown-item" href="my-vouchers.php"><i
+                                        class="fa-solid fa-ticket-simple me-2"></i> Kho Voucher</a></li>
+
                             <li><a class="dropdown-item" href="my-support.php"><i
                                         class="fa-solid fa-headset me-2"></i> Lịch sử Hỗ trợ</a></li>
 
@@ -194,6 +201,13 @@ $currencies = [
                         <i class="fa-solid fa-bars header-icon"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="background-color: #003b73; border: none; border-radius: 8px; padding: 10px 0; min-width: 220px;">
+                        <li class="d-lg-none"><a class="dropdown-item text-white py-2 custom-menu-item" href="tours.php" style="font-size: 16px;">Tour trọn gói</a></li>
+                        <li class="d-lg-none"><a class="dropdown-item text-white py-2 custom-menu-item" href="flights.php" style="font-size: 16px;">Vé máy bay</a></li>
+                        <li class="d-lg-none"><a class="dropdown-item text-white py-2 custom-menu-item" href="hotels.php" style="font-size: 16px;">Khách sạn</a></li>
+                        <li class="d-lg-none"><a class="dropdown-item text-white py-2 custom-menu-item" href="combos.php" style="font-size: 16px;">Combo du lịch</a></li>
+                        <li class="d-lg-none"><a class="dropdown-item text-white py-2 custom-menu-item" href="services.php" style="font-size: 16px;">Dịch vụ cộng thêm</a></li>
+                        <li class="d-lg-none"><a class="dropdown-item text-warning fw-bold py-2 custom-menu-item" href="voucher-center.php" style="font-size: 16px;"><i class="fa-solid fa-gift me-1"></i> Săn Voucher</a></li>
+                        <li class="d-lg-none"><hr class="dropdown-divider bg-light opacity-25"></li>
                         <li><a class="dropdown-item text-white py-2 custom-menu-item" href="guide.php" style="font-size: 16px;">Cẩm nang du lịch</a></li>
                         <li><a class="dropdown-item text-white py-2 custom-menu-item" href="bespoke.php" style="font-size: 16px;">Bespoke</a></li>
                         <li><a class="dropdown-item text-white py-2 custom-menu-item" href="about.php" style="font-size: 16px;">Giới thiệu</a></li>

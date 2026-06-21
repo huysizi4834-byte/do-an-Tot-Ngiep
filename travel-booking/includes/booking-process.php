@@ -27,11 +27,24 @@ $total_people = $_POST['total_people'] ?? 1;
 $sql_tour = "SELECT price FROM tours WHERE id = $tour_id";
 $result_tour = mysqli_query($conn, $sql_tour);
 $tour = mysqli_fetch_assoc($result_tour);
-$total_price = ($tour['price'] ?? 0) * $total_people;
+
+$promotion_id = isset($_POST['promotion_id']) ? intval($_POST['promotion_id']) : 0;
+$discount_amount = isset($_POST['discount_amount']) ? floatval($_POST['discount_amount']) : 0;
+
+$raw_price = ($tour['price'] ?? 0) * $total_people;
+$total_price = $raw_price - $discount_amount;
+if ($total_price < 0) $total_price = 0;
 
 $payment_type = $_POST['payment_type'] ?? 'full';
 $amount_paid = ($payment_type === 'deposit') ? ($total_price / 2) : $total_price;
 $booking_code = 'TR' . strtoupper(substr(uniqid(), -6));
+
+if ($promotion_id > 0) {
+    // Mark promotion as used for this user
+    mysqli_query($conn, "UPDATE user_promotions SET status = 'used', used_at = NOW() WHERE user_id = $user_id AND promotion_id = $promotion_id");
+    // Increment used_count
+    mysqli_query($conn, "UPDATE promotions SET used_count = used_count + 1 WHERE id = $promotion_id");
+}
 
 $stmt = mysqli_prepare(
     $conn,
