@@ -212,35 +212,43 @@ foreach ($gallery_images as $img) {
         <div class="col-12">
             <h3 class="mb-4 border-bottom pb-2">Đánh giá từ Khách hàng</h3>
             <?php if (count($reviews) > 0): ?>
-                <div class="row g-4">
+                <!-- Bộ lọc đánh giá -->
+                <div class="review-filters mb-3 d-flex flex-wrap gap-2">
+                    <button class="btn btn-sm btn-primary filter-btn rounded-pill px-3 fw-bold shadow-sm" data-filter="all">Tất cả</button>
+                    <button class="btn btn-sm btn-outline-primary filter-btn rounded-pill px-3 fw-bold shadow-sm" data-filter="good">Đánh giá tốt (4-5 <i class="fa-solid fa-star text-warning" style="font-size: 10px;"></i>)</button>
+                    <button class="btn btn-sm btn-outline-primary filter-btn rounded-pill px-3 fw-bold shadow-sm" data-filter="bad">Cần cải thiện (1-3 <i class="fa-solid fa-star text-warning" style="font-size: 10px;"></i>)</button>
+                </div>
+                
+                <!-- Horizontal scroll container cho bình luận -->
+                <div class="d-flex flex-row flex-nowrap overflow-auto pb-3 gap-3" id="reviews-container" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch;">
                     <?php foreach ($reviews as $review): ?>
-                        <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="me-3">
-                                            <?php if (!empty($review['avatar'])): ?>
-                                                <img src="<?= htmlspecialchars($review['avatar']) ?>" alt="Avatar" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
-                                            <?php else: ?>
-                                                <i class="fa-solid fa-circle-user text-secondary" style="font-size: 50px;"></i>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0 fw-bold"><?= htmlspecialchars($review['full_name']) ?></h6>
-                                            <small class="text-muted"><?= date('d/m/Y', strtotime($review['created_at'])) ?></small>
-                                        </div>
+                        <div class="card border-0 shadow-sm flex-shrink-0 review-item" data-rating="<?= $review['rating'] ?>" style="width: 350px; border-radius: 12px; transition: all 0.3s ease;">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="me-3">
+                                        <?php if (!empty($review['avatar'])): ?>
+                                            <img src="<?= htmlspecialchars($review['avatar']) ?>" alt="Avatar" class="rounded-circle" style="width: 45px; height: 45px; object-fit: cover; border: 2px solid #f8f9fa;">
+                                        <?php else: ?>
+                                            <i class="fa-solid fa-circle-user text-secondary" style="font-size: 45px;"></i>
+                                        <?php endif; ?>
                                     </div>
-                                    <div class="text-warning mb-2">
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <?php if ($i <= $review['rating']): ?>
-                                                <i class="fa-solid fa-star"></i>
-                                            <?php else: ?>
-                                                <i class="fa-regular fa-star"></i>
-                                            <?php endif; ?>
-                                        <?php endfor; ?>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold" style="font-size: 15px;"><?= htmlspecialchars($review['full_name']) ?></h6>
+                                        <small class="text-muted" style="font-size: 12px;"><?= date('d/m/Y', strtotime($review['created_at'])) ?></small>
                                     </div>
-                                    <p class="card-text text-muted"><?= nl2br(htmlspecialchars($review['comment'])) ?></p>
                                 </div>
+                                <div class="text-warning mb-2" style="font-size: 14px;">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <?php if ($i <= $review['rating']): ?>
+                                            <i class="fa-solid fa-star"></i>
+                                        <?php else: ?>
+                                            <i class="fa-regular fa-star"></i>
+                                        <?php endif; ?>
+                                    <?php endfor; ?>
+                                </div>
+                                <p class="card-text text-secondary mb-0" style="font-size: 14px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">
+                                    <?= nl2br(htmlspecialchars($review['comment'])) ?>
+                                </p>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -331,6 +339,63 @@ document.addEventListener('DOMContentLoaded', function() {
                 s.classList.remove('fa-solid');
                 s.classList.add('fa-regular');
             }
+        });
+    }
+
+    // Xử lý bộ lọc đánh giá
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const reviewItems = document.querySelectorAll('.review-item');
+    
+    if (filterBtns.length > 0 && reviewItems.length > 0) {
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Đổi class active
+                filterBtns.forEach(b => {
+                    b.classList.remove('btn-primary');
+                    b.classList.add('btn-outline-primary');
+                });
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+                
+                const filterValue = this.getAttribute('data-filter');
+                let visibleCount = 0;
+                
+                reviewItems.forEach(item => {
+                    const rating = parseInt(item.getAttribute('data-rating'));
+                    let show = false;
+                    
+                    if (filterValue === 'all') {
+                        show = true;
+                    } else if (filterValue === 'good' && rating >= 4) {
+                        show = true;
+                    } else if (filterValue === 'bad' && rating <= 3) {
+                        show = true;
+                    }
+                    
+                    if (show) {
+                        item.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                // Nếu không có đánh giá nào phù hợp với bộ lọc
+                let emptyMsg = document.getElementById('empty-filter-msg');
+                if (visibleCount === 0) {
+                    if (!emptyMsg) {
+                        emptyMsg = document.createElement('div');
+                        emptyMsg.id = 'empty-filter-msg';
+                        emptyMsg.className = 'alert alert-light text-center w-100 py-4 text-muted border-0 shadow-sm';
+                        emptyMsg.style.borderRadius = '12px';
+                        emptyMsg.innerHTML = '<i class="fa-regular fa-face-frown fa-2x mb-2 text-secondary"></i><p class="mb-0">Không có đánh giá nào phù hợp với bộ lọc này.</p>';
+                        document.getElementById('reviews-container').appendChild(emptyMsg);
+                    }
+                    emptyMsg.style.display = 'block';
+                } else if (emptyMsg) {
+                    emptyMsg.style.display = 'none';
+                }
+            });
         });
     }
 });

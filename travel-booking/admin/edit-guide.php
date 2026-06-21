@@ -96,9 +96,9 @@ include 'includes/admin-header.php';
             <div class="mb-4">
                 <label class="form-label fw-bold">Ảnh bìa hiện tại</label><br>
                 <?php if (!empty($guide['image'])): ?>
-                    <img src="../assets/images/guides/<?= htmlspecialchars($guide['image']) ?>" alt="Current Cover" style="width: 200px; border-radius: 8px; margin-bottom: 10px;">
-                <?php else: ?>
-                    <p class="text-muted">Chưa có ảnh bìa.</p>
+                    <?php $imgSrc = (strpos($guide['image'], 'http') === 0) ? htmlspecialchars($guide['image']) : "../assets/images/guides/" . htmlspecialchars($guide['image']); ?>
+                    <img src="<?= $imgSrc ?>" alt="Current Cover" style="width: 200px; border-radius: 8px; margin-bottom: 10px;">
+                    <div class="form-text text-muted mb-2">Ảnh bìa hiện tại</div>
                 <?php endif; ?>
                 <input type="file" class="form-control" name="image" accept="image/*">
                 <small class="text-muted">Chỉ chọn file mới nếu bạn muốn thay đổi ảnh bìa hiện tại.</small>

@@ -105,7 +105,8 @@ include 'includes/admin-header.php';
         <?php while ($img = mysqli_fetch_assoc($images_res)): ?>
             <div class="col-6 col-md-4 col-lg-3">
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 position-relative">
-                    <img src="../assets/images/guides/<?= htmlspecialchars($img['image']) ?>" alt="Guide Image" class="w-100 h-100 object-fit-cover" style="min-height: 200px;">
+                    <?php $imgSrc = (strpos($img['image'], 'http') === 0) ? htmlspecialchars($img['image']) : "../assets/images/guides/" . htmlspecialchars($img['image']); ?>
+                    <img src="<?= $imgSrc ?>" alt="Guide Image" class="w-100 h-100 object-fit-cover" style="min-height: 200px;">
                     <a href="guide-images.php?guide_id=<?= $guide_id ?>&delete_id=<?= $img['id'] ?>" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle" onclick="return confirm('Xóa ảnh này?');" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;" title="Xóa ảnh">
                         <i class="bi bi-trash"></i>
                     </a>

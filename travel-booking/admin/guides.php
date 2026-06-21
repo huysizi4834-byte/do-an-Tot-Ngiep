@@ -39,7 +39,7 @@ include 'includes/admin-header.php';
                         <th width="80">Ảnh</th>
                         <th>Tiêu đề</th>
                         <th>Ngày đăng</th>
-                        <th class="text-end" width="150">Hành động</th>
+                        <th class="text-end">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -48,7 +48,8 @@ include 'includes/admin-header.php';
                             <tr>
                                 <td>
                                     <?php if (!empty($row['image'])): ?>
-                                        <img src="../assets/images/guides/<?= htmlspecialchars($row['image']) ?>" alt="Cover" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                        <?php $imgSrc = (strpos($row['image'], 'http') === 0) ? htmlspecialchars($row['image']) : "../assets/images/guides/" . htmlspecialchars($row['image']); ?>
+                                        <img src="<?= $imgSrc ?>" alt="Cover" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
                                     <?php else: ?>
                                         <div class="bg-secondary bg-opacity-25 rounded" style="width: 60px; height: 40px;"></div>
                                     <?php endif; ?>
@@ -57,10 +58,10 @@ include 'includes/admin-header.php';
                                     <div class="fw-bold"><?= htmlspecialchars($row['title']) ?></div>
                                 </td>
                                 <td><?= date('d/m/Y H:i', strtotime($row['created_at'])) ?></td>
-                                <td class="text-end">
-                                    <a href="guide-images.php?guide_id=<?= $row['id'] ?>" class="btn btn-sm btn-info text-white me-1" title="Quản lý ảnh phụ"><i class="bi bi-images"></i></a>
-                                    <a href="edit-guide.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary me-1"><i class="bi bi-pencil"></i> Sửa</a>
-                                    <a href="guides.php?delete_id=<?= $row['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa bài viết này?');"><i class="bi bi-trash"></i></a>
+                                <td class="text-end text-nowrap">
+                                    <a href="guide-images.php?guide_id=<?= $row['id'] ?>" class="btn btn-sm btn-info text-white" title="Quản lý ảnh phụ"><i class="bi bi-images"></i></a>
+                                    <a href="edit-guide.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> Sửa</a>
+                                    <a href="guides.php?delete_id=<?= $row['id'] ?>" class="btn btn-sm btn-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa bài viết này?');"><i class="bi bi-trash"></i></a>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
