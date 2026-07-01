@@ -69,7 +69,7 @@ if (!empty($payment_face_image_b64)) {
     }
 }
 
-// Tạo truy vấn update thông tin
+// Tạo truy vấn update thông tin cho bảng đặt vé
 $update_fields = ["payment_status = 'paid'"];
 if (!empty($cccd)) $update_fields[] = "cccd = '$cccd'";
 if (!empty($representative_name)) $update_fields[] = "representative_name = '$representative_name'";
@@ -77,6 +77,7 @@ if (!empty($payment_face_image_path)) $update_fields[] = "payment_face_image = '
 
 $update_str = implode(', ', $update_fields);
 
+// Cập nhật trạng thái "Đã thanh toán" vào bảng Đặt vé
 $sql = "UPDATE $table SET $update_str WHERE booking_code = '$booking_code' AND user_id = '$user_id'";
 mysqli_query($conn, $sql);
 

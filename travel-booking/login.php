@@ -40,6 +40,20 @@ if (isset($_SESSION['user_id'])) {
 
                 </div>
 
+                <?php if (isset($_SESSION['login_message'])): ?>
+                    <div class="alert alert-success">
+                        <?= $_SESSION['login_message']; ?>
+                        <?php unset($_SESSION['login_message']); ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['login_error'])): ?>
+                    <div class="alert alert-danger">
+                        <?= $_SESSION['login_error']; ?>
+                        <?php unset($_SESSION['login_error']); ?>
+                    </div>
+                <?php endif; ?>
+
                 <form action="includes/auth/login-process.php" method="POST">
 
                     <div class="mb-3">
@@ -77,7 +91,7 @@ if (isset($_SESSION['user_id'])) {
 
                         </div>
 
-                        <a href="#">
+                        <a href="forgot-password.php">
                             Quên mật khẩu?
                         </a>
 

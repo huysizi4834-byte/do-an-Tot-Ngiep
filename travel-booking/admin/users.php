@@ -67,6 +67,7 @@ include 'includes/admin-header.php';
                     <th>Email</th>
                     <th>Số điện thoại</th>
                     <th>Ngày đăng ký</th>
+                    <th>Face ID</th>
                     <th>Trạng thái</th>
                     <th>Hành động</th>
                 </tr>
@@ -80,6 +81,13 @@ include 'includes/admin-header.php';
                             <td><?= htmlspecialchars($u['email']) ?></td>
                             <td><?= htmlspecialchars($u['phone'] ?? 'Chưa cập nhật') ?></td>
                             <td><?= date('d/m/Y', strtotime($u['created_at'])) ?></td>
+                            <td>
+                                <?php if (!empty($u['face_descriptor'])): ?>
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Đã xác thực</span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">Chưa</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <?php if ($u['status'] == 'active'): ?>
                                     <span class="badge bg-success">Hoạt động</span>
@@ -112,7 +120,7 @@ include 'includes/admin-header.php';
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="7" class="text-center">Không tìm thấy người dùng nào.</td>
+                        <td colspan="8" class="text-center">Không tìm thấy người dùng nào.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

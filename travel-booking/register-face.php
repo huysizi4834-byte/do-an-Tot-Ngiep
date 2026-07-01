@@ -25,7 +25,7 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
 
                     <!-- Video Feed -->
-                    <video id="video" width="640" height="480" autoplay muted playsinline class="z-2 position-relative" style="display: none; border-radius: 10px; max-width: 100%;"></video>
+                    <video id="video" width="640" height="480" autoplay muted playsinline class="z-2 position-relative" style="display: none; border-radius: 10px; max-width: 100%; max-height: 500px; object-fit: cover;"></video>
                     
                     <!-- Canvas for face overlay -->
                     <canvas id="overlay" class="position-absolute top-0 start-0 z-3" style="width: 100%; height: 100%; pointer-events: none;"></canvas>
@@ -49,7 +49,7 @@ if (!isset($_SESSION['user_id'])) {
                 <small class="text-muted">Tải một bức ảnh rõ khuôn mặt của bạn lên để hệ thống phân tích thay vì dùng Camera.</small>
             </div>
             <!-- Hidden img for upload fallback -->
-            <img id="uploadedImage" style="display:none; max-width: 100%;">
+            <img id="uploadedImage" style="display:none; max-width: 100%; max-height: 500px; object-fit: contain; border-radius: 10px;">
         </div>
     </div>
 </div>
@@ -121,7 +121,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         statusMessage.innerText = "Đang phân tích khuôn mặt...";
 
         const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-        handleDetection(detection, true);
+        
+        // Capture frame as base64
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+
+        handleDetection(detection, true, imageData);
     });
 
     // Capture and Save Logic for Uploaded Image
@@ -158,13 +167,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 loading.style.display = 'none';
 
                 const detection = await faceapi.detectSingleFace(uploadedImage, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-                handleDetection(detection, false);
+                handleDetection(detection, false, uploadedImage.src);
             };
         };
         reader.readAsDataURL(file);
     });
 
-    function handleDetection(detection, isVideo) {
+    function handleDetection(detection, isVideo, imageData) {
         if (!detection) {
             statusMessage.className = "mt-4 fw-bold fs-5 text-danger";
             statusMessage.innerText = "Không tìm thấy khuôn mặt nào! Vui lòng thử lại.";
@@ -185,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ descriptor: descriptor })
+            body: JSON.stringify({ descriptor: descriptor, image: imageData })
         })
         .then(response => response.json())
         .then(data => {

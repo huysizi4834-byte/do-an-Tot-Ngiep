@@ -147,7 +147,7 @@ include 'includes/header.php';
                     <p class="text-muted small">Cài đặt Face ID để tự động xác thực và check-in không cần giấy tờ.</p>
                     <a href="register-face.php" class="btn btn-outline-success">
                         <i class="fa-solid fa-face-smile me-2"></i> 
-                        <?= empty($user['face_descriptor']) ? 'Cài đặt Face ID' : 'Cập nhật lại Face ID' ?>
+                        <?= empty($user['face_descriptor']) ? 'Cài đặt Face ID' : 'Đã cập nhật Face ID' ?>
                     </a>
 
                     <hr>
