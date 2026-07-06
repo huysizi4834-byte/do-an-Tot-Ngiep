@@ -1,7 +1,7 @@
 <?php
 
 $conn = mysqli_connect(
-    "localhost",
+    "127.0.0.1",
     "root",
     "",
     "travel_booking_db"
