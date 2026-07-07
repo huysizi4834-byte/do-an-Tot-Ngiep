@@ -98,8 +98,8 @@ include 'includes/header.php';
                                     <input type="file" name="cccd_image" id="cccd_image" class="form-control" accept="image/*" onchange="handleCccdUpload()">
                                     <small class="text-danger d-block mb-2">Bắt buộc khi đặt phòng trên 4 người</small>
                                     
-                                    <div id="cccd_preview_section" class="text-center bg-light p-2 rounded border" style="display: none;">
-                                        <img id="cccd_preview" style="width: 100%; border-radius: 5px;" />
+                                    <div id="cccd_preview_section" class="text-center bg-light p-2 rounded border" style="display: none; max-height: 250px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                                        <img id="cccd_preview" style="max-height: 220px; width: auto; max-width: 100%; border-radius: 5px; object-fit: contain;" />
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -109,7 +109,7 @@ include 'includes/header.php';
                                     <div id="camera_section" class="text-center bg-light p-2 rounded border">
                                         <video id="camera_stream" width="100%" autoplay playsinline style="border-radius: 5px;"></video>
                                         <canvas id="camera_canvas" style="display: none;"></canvas>
-                                        <img id="camera_preview" style="display: none; width: 100%; border-radius: 5px;" />
+                                        <img id="camera_preview" style="display: none; max-height: 220px; width: auto; max-width: 100%; border-radius: 5px; object-fit: contain;" />
                                         <button type="button" id="btn_capture" class="btn btn-info mt-2 w-100 text-white"><i class="fa-solid fa-camera me-2"></i>Chụp ảnh</button>
                                         <button type="button" id="btn_retake" class="btn btn-warning mt-2 w-100" style="display: none;"><i class="fa-solid fa-rotate-right me-2"></i>Chụp lại</button>
                                         
@@ -461,21 +461,16 @@ include 'includes/header.php';
         if (cccdInput.files && cccdInput.files[0]) {
             const reader = new FileReader();
             
-            cccdPreview.onload = async function() {
-                if (window.isFaceApiLoaded) {
-                    const detection = await faceapi.detectSingleFace(cccdPreview, new faceapi.TinyFaceDetectorOptions());
-                    if (!detection) {
-                        alert("AI Cảnh báo: Hình như đây không phải là mặt trước CCCD/CMND! Không tìm thấy ảnh thẻ (khuôn mặt) trên giấy tờ. Vui lòng chụp lại rõ ràng hơn.");
-                        cccdInput.value = "";
-                        cccdPreview.src = "";
-                        cccdPreviewSection.style.display = 'none';
-                    }
-                }
+            // Không chạy face-api trên ảnh CCCD nữa để tránh chặn việc upload ảnh CCCD thật
+            cccdPreview.onload = function() {
+                // Chỉ hiển thị ảnh, không quét khuôn mặt
             };
             
             reader.onload = function(e) {
                 cccdPreview.src = e.target.result;
                 cccdPreviewSection.style.display = 'block';
+                // Đảm bảo hiển thị đúng style flex của phần chứa preview
+                cccdPreviewSection.style.display = 'flex';
             }
             reader.readAsDataURL(cccdInput.files[0]);
         } else {
