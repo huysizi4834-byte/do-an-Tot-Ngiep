@@ -119,7 +119,9 @@ include 'includes/admin-header.php';
             </div>
             <div class="card-body text-center">
                 <?php if (!empty($user['face_image'])): ?>
-                    <img src="../<?= htmlspecialchars($user['face_image']) ?>" alt="Face ID" class="img-thumbnail rounded" style="max-height: 250px;">
+                    <a href="../<?= htmlspecialchars($user['face_image']) ?>" target="_blank">
+                        <img src="../<?= htmlspecialchars($user['face_image']) ?>" alt="Face ID" class="img-thumbnail rounded" style="max-height: 200px; width: auto; max-width: 100%; object-fit: contain;">
+                    </a>
                     <p class="mt-3 text-success fw-bold"><i class="bi bi-check-circle"></i> Đã xác thực khuôn mặt</p>
                 <?php else: ?>
                     <p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Người dùng đã xác thực Face ID nhưng hệ thống chưa lưu ảnh khuôn mặt (dữ liệu cũ chỉ có mã đặc trưng).</p>

@@ -112,22 +112,28 @@ include 'includes/admin-header.php';
                     <?php if (!empty($booking['cccd_image'])): ?>
                     <div class="col-md-6 mb-3">
                         <h6>Ảnh CMND / CCCD</h6>
-                        <img src="../<?= htmlspecialchars($booking['cccd_image']) ?>" class="img-fluid rounded border" alt="CCCD Image">
+                        <a href="../<?= htmlspecialchars($booking['cccd_image']) ?>" target="_blank">
+                            <img src="../<?= htmlspecialchars($booking['cccd_image']) ?>" class="img-fluid rounded border" alt="CCCD Image" style="max-height: 200px; width: auto; max-width: 100%; object-fit: contain;">
+                        </a>
                     </div>
                     <?php endif; ?>
                     
                     <?php if (!empty($booking['face_image'])): ?>
                     <div class="col-md-6 mb-3">
                         <h6>Ảnh khuôn mặt (Selfie)</h6>
-                        <img src="../<?= htmlspecialchars($booking['face_image']) ?>" class="img-fluid rounded border" alt="Face Image">
+                        <a href="../<?= htmlspecialchars($booking['face_image']) ?>" target="_blank">
+                            <img src="../<?= htmlspecialchars($booking['face_image']) ?>" class="img-fluid rounded border" alt="Face Image" style="max-height: 200px; width: auto; max-width: 100%; object-fit: contain;">
+                        </a>
                     </div>
                     <?php endif; ?>
                     
                     <?php if (!empty($booking['payment_face_image'])): ?>
                     <div class="col-md-6 mb-3">
                         <h6>Ảnh quét lúc Thanh toán (Face ID)</h6>
-                        <img src="../<?= htmlspecialchars($booking['payment_face_image']) ?>" class="img-fluid rounded border border-success" alt="Payment Face Snapshot">
-                        <small class="text-muted fst-italic">Hình ảnh mang tính chất minh họa/đối chiếu.</small>
+                        <a href="../<?= htmlspecialchars($booking['payment_face_image']) ?>" target="_blank">
+                            <img src="../<?= htmlspecialchars($booking['payment_face_image']) ?>" class="img-fluid rounded border border-success" alt="Payment Face Snapshot" style="max-height: 200px; width: auto; max-width: 100%; object-fit: contain;">
+                        </a>
+                        <small class="text-muted fst-italic d-block mt-1">Hình ảnh mang tính chất minh họa/đối chiếu.</small>
                     </div>
                     <?php endif; ?>
                 </div>
