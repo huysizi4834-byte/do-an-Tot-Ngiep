@@ -461,15 +461,20 @@ include 'includes/header.php';
         if (cccdInput.files && cccdInput.files[0]) {
             const reader = new FileReader();
             
-            // Không chạy face-api trên ảnh CCCD nữa để tránh chặn việc upload ảnh CCCD thật
-            cccdPreview.onload = function() {
-                // Chỉ hiển thị ảnh, không quét khuôn mặt
+            cccdPreview.onload = async function() {
+                if (window.isFaceApiLoaded) {
+                    const detection = await faceapi.detectSingleFace(cccdPreview, new faceapi.TinyFaceDetectorOptions());
+                    if (!detection) {
+                        alert("AI Cảnh báo: Hình như đây không phải là mặt trước CCCD/CMND! Không tìm thấy ảnh thẻ (khuôn mặt) trên giấy tờ. Vui lòng chụp lại rõ ràng hơn.");
+                        cccdInput.value = "";
+                        cccdPreview.src = "";
+                        cccdPreviewSection.style.display = 'none';
+                    }
+                }
             };
             
             reader.onload = function(e) {
                 cccdPreview.src = e.target.result;
-                cccdPreviewSection.style.display = 'block';
-                // Đảm bảo hiển thị đúng style flex của phần chứa preview
                 cccdPreviewSection.style.display = 'flex';
             }
             reader.readAsDataURL(cccdInput.files[0]);
