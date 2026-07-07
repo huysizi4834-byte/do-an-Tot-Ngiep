@@ -18,9 +18,9 @@ if (isset($_GET['api']) && $_GET['api'] == 'get_faces') {
 }
 
 // API xử lý Check-in khi tìm thấy user_id
-if (isset($_POST['api']) && $_POST['api'] == 'do_checkin') {
+$data = json_decode(file_get_contents('php://input'), true);
+if (isset($data['api']) && $data['api'] == 'do_checkin') {
     header('Content-Type: application/json');
-    $data = json_decode(file_get_contents('php://input'), true);
     $uid = (int) $data['user_id'];
     
     // Tìm các booking chưa check-in của user này
