@@ -289,58 +289,84 @@ include 'includes/header.php';
         document.getElementById('paymentSection').style.display = 'block';
     }
 
-    // Camera mô phỏng (Mock Camera)
-    function startCamera() {
+    // Hỗ trợ Camera thật (WebRTC) và Camera mô phỏng fallback
+    let useMockCamera = false;
+    let localStream = null;
+
+    async function startCamera() {
         const video = document.getElementById('camera_stream');
-        video.style.display = 'none'; // Ẩn thẻ video thật
-        
         const canvas = document.getElementById('camera_canvas');
-        canvas.style.display = 'block';
-        canvas.style.margin = '0 auto';
-        canvas.width = 400;
-        canvas.height = 300;
-        
-        const ctx = canvas.getContext('2d');
-        
-        // Vẽ khung camera giả lập
-        ctx.fillStyle = '#e9ecef';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Vẽ chữ
-        ctx.fillStyle = '#495057';
-        ctx.font = 'bold 20px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Camera Mô Phỏng (Đang bật...)', canvas.width/2, 50);
-        
-        // Vẽ hình người giả lập (khuôn mặt)
-        ctx.beginPath();
-        ctx.arc(canvas.width/2, 140, 50, 0, Math.PI * 2, true); // Đầu
-        ctx.fillStyle = '#adb5bd';
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.arc(canvas.width/2, 280, 80, Math.PI, 0, false); // Thân
-        ctx.fill();
-        ctx.stroke();
+        useMockCamera = false;
+
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            video.srcObject = localStream;
+            video.style.display = 'block';
+            canvas.style.display = 'none';
+        } catch (err) {
+            console.warn("Không mở được camera thật (chuyển sang mô phỏng):", err);
+            useMockCamera = true;
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+            canvas.style.margin = '0 auto';
+            canvas.width = 400;
+            canvas.height = 300;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#e9ecef';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#495057';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Camera Mô Phỏng (Đang bật...)', canvas.width/2, 50);
+            
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, 140, 50, 0, Math.PI * 2, true); // Đầu
+            ctx.fillStyle = '#adb5bd';
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, 280, 80, Math.PI, 0, false); // Thân
+            ctx.fill();
+            ctx.stroke();
+        }
     }
 
     function stopCamera() {
+        const video = document.getElementById('camera_stream');
         const canvas = document.getElementById('camera_canvas');
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+        video.srcObject = null;
+        video.style.display = 'none';
         canvas.style.display = 'none';
     }
 
     document.getElementById('btn_capture').addEventListener('click', async () => {
+        const video = document.getElementById('camera_stream');
         const canvas = document.getElementById('camera_canvas');
-        
-        // Lấy dữ liệu ảnh từ canvas giả lập
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        document.getElementById('face_image_base64').value = dataUrl;
         const previewImg = document.getElementById('camera_preview');
         
+        let dataUrl = '';
+        if (useMockCamera) {
+            dataUrl = canvas.toDataURL('image/jpeg');
+        } else {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth || 640;
+            tempCanvas.height = video.videoHeight || 480;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            dataUrl = tempCanvas.toDataURL('image/jpeg');
+        }
+        
+        document.getElementById('face_image_base64').value = dataUrl;
+        
         previewImg.onload = async function() {
-            if (window.isFaceApiLoaded) {
-                // Hiển thị trạng thái đang check
+            if (!useMockCamera && window.isFaceApiLoaded) {
                 const btnCapture = document.getElementById('btn_capture');
                 const oldHTML = btnCapture.innerHTML;
                 btnCapture.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét AI...';
@@ -364,16 +390,21 @@ include 'includes/header.php';
         
         previewImg.src = dataUrl;
         previewImg.style.display = 'block';
-        canvas.style.display = 'none'; // Ẩn camera view
+        video.style.display = 'none';
+        canvas.style.display = 'none';
     });
 
     document.getElementById('btn_retake').addEventListener('click', () => {
         document.getElementById('face_image_base64').value = '';
         document.getElementById('camera_preview').style.display = 'none';
-        document.getElementById('camera_canvas').style.display = 'block'; // Hiện lại camera view
+        if (useMockCamera) {
+            document.getElementById('camera_canvas').style.display = 'block';
+        } else {
+            document.getElementById('camera_stream').style.display = 'block';
+        }
         document.getElementById('btn_capture').style.display = 'block';
         document.getElementById('btn_retake').style.display = 'none';
-        document.getElementById('face_image').value = ""; // Clear file input
+        document.getElementById('face_image').value = "";
     });
 
     function handleFileUpload() {
