@@ -10,6 +10,11 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+$user_id = $_SESSION['user_id'];
+$user_query = mysqli_query($conn, "SELECT phone FROM users WHERE id = $user_id");
+$user_info = mysqli_fetch_assoc($user_query);
+$user_phone = $user_info['phone'] ?? '';
+
 if (!isset($_GET['id'])) {
     header("Location: hotels.php");
     exit;
@@ -50,6 +55,7 @@ include 'includes/header.php';
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Số điện thoại liên hệ</label>
                                 <input type="text" name="guest_phone" class="form-control"
+                                    value="<?= htmlspecialchars($user_phone) ?>"
                                     placeholder="Ví dụ: 0912345678" required>
                             </div>
                         </div>
